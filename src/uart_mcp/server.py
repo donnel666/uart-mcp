@@ -14,6 +14,12 @@ from mcp.server.models import InitializationOptions
 
 from .errors import SerialError
 from .serial_manager import get_serial_manager
+from .tools.data_ops import (
+    READ_DATA_TOOL,
+    SEND_DATA_TOOL,
+    read_data,
+    send_data,
+)
 from .tools.list_ports import LIST_PORTS_TOOL, list_ports
 from .tools.port_ops import (
     CLOSE_PORT_TOOL,
@@ -66,6 +72,16 @@ async def handle_list_tools() -> list[types.Tool]:
             description=GET_STATUS_TOOL["description"],
             inputSchema=GET_STATUS_TOOL["inputSchema"],
         ),
+        types.Tool(
+            name=SEND_DATA_TOOL["name"],
+            description=SEND_DATA_TOOL["description"],
+            inputSchema=SEND_DATA_TOOL["inputSchema"],
+        ),
+        types.Tool(
+            name=READ_DATA_TOOL["name"],
+            description=READ_DATA_TOOL["description"],
+            inputSchema=READ_DATA_TOOL["inputSchema"],
+        ),
     ]
 
 
@@ -86,6 +102,10 @@ async def handle_call_tool(
             result = set_config(**arguments)
         elif name == "get_status":
             result = get_status(**arguments)
+        elif name == "send_data":
+            result = send_data(**arguments)
+        elif name == "read_data":
+            result = read_data(**arguments)
         else:
             raise ValueError(f"未知工具：{name}")
 

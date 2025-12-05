@@ -21,6 +21,7 @@ from .errors import (
     PortClosedError,
     PortNotFoundError,
     PortOpenFailedError,
+    WriteFailedError,
 )
 from .types import (
     DEFAULT_BAUDRATE,
@@ -596,6 +597,92 @@ class SerialManager:
                 )
                 for port, managed in self._ports.items()
             ]
+
+    def send_data(self, port: str, data: bytes) -> int:
+        """发送原始字节数据
+
+        Args:
+            port: 串口路径
+            data: 要发送的字节数据
+
+        Returns:
+            发送的字节数
+
+        Raises:
+            PortClosedError: 串口未打开
+            WriteFailedError: 写入失败
+        """
+        with self._lock:
+            if port not in self._ports:
+                raise PortClosedError(port)
+
+            managed = self._ports[port]
+            try:
+                bytes_written: int = managed.serial.write(data)
+                logger.debug("发送数据到串口 %s：%d 字节", port, bytes_written)
+                return bytes_written
+            except SerialException as e:
+                logger.error("串口写入失败：%s - %s", port, e)
+                raise WriteFailedError(port, str(e)) from e
+
+    def read_data(
+        self, port: str, size: int | None = None, timeout_ms: int | None = None
+    ) -> bytes:
+        """读取原始字节数据
+
+        Args:
+            port: 串口路径
+            size: 读取字节数，None 表示读取所有可用数据
+            timeout_ms: 读取超时（毫秒），None 使用串口配置的超时
+
+        Returns:
+            读取的字节数据
+
+        Raises:
+            PortClosedError: 串口未打开
+        """
+        with self._lock:
+            if port not in self._ports:
+                raise PortClosedError(port)
+
+            managed = self._ports[port]
+            ser = managed.serial
+
+            # 保存原始超时设置
+            original_timeout = ser.timeout
+
+            try:
+                # 如果指定了超时，临时修改
+                if timeout_ms is not None:
+                    ser.timeout = timeout_ms / 1000.0
+
+                data: bytes
+                if size is not None:
+                    # 读取指定字节数
+                    data = ser.read(size)
+                else:
+                    # 读取所有可用数据
+                    available: int = ser.in_waiting
+                    if available > 0:
+                        data = ser.read(available)
+                    else:
+                        # 没有可用数据，尝试读取一次（会等待超时）
+                        data = ser.read(1)
+                        if data:
+                            # 如果读到数据，继续读取剩余的
+                            remaining: int = ser.in_waiting
+                            if remaining > 0:
+                                data += ser.read(remaining)
+
+                logger.debug("从串口 %s 读取数据：%d 字节", port, len(data))
+                return data
+            except SerialException as e:
+                logger.error("串口读取失败：%s - %s", port, e)
+                raise PortClosedError(port) from e
+            finally:
+                # 恢复原始超时设置
+                if timeout_ms is not None:
+                    ser.timeout = original_timeout
 
     def shutdown(self) -> None:
         """关闭管理器

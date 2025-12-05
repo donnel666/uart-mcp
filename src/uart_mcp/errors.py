@@ -124,3 +124,11 @@ class PortBlacklistedError(SerialError):
 
     def __init__(self, port: str) -> None:
         super().__init__(ErrorCode.PORT_BLACKLISTED, port)
+
+
+class WriteFailedError(SerialError):
+    """写入失败异常"""
+
+    def __init__(self, port: str, reason: str | None = None) -> None:
+        detail = f"{port}" if not reason else f"{port} - {reason}"
+        super().__init__(ErrorCode.WRITE_FAILED, detail)

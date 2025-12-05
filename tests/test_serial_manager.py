@@ -8,6 +8,7 @@ from uart_mcp.errors import (
     InvalidParamError,
     PortBlacklistedError,
     PortClosedError,
+    WriteFailedError,
 )
 from uart_mcp.serial_manager import SerialManager
 
@@ -216,5 +217,157 @@ class TestSerialManagerGetStatus:
 
         with pytest.raises(PortClosedError):
             manager.get_status("/dev/ttyUSB0")
+
+        manager.shutdown()
+
+
+class TestSerialManagerSendData:
+    """测试 send_data 功能"""
+
+    def test_send_data_success(self, mock_serial, mock_list_ports):
+        """测试成功发送数据"""
+        mock_list_ports.return_value = []
+        manager = SerialManager(enable_auto_reconnect=False)
+
+        with patch.object(manager, "_create_serial") as mock_create:
+            mock_serial_obj = MagicMock()
+            mock_serial_obj.is_open = True
+            mock_serial_obj.in_waiting = 0
+            mock_serial_obj.write.return_value = 5
+            mock_create.return_value = mock_serial_obj
+
+            manager.open_port("/dev/ttyUSB0")
+            bytes_written = manager.send_data("/dev/ttyUSB0", b"hello")
+
+            assert bytes_written == 5
+            mock_serial_obj.write.assert_called_once_with(b"hello")
+
+        manager.shutdown()
+
+    def test_send_data_not_open(self, mock_list_ports):
+        """测试向未打开的串口发送数据"""
+        mock_list_ports.return_value = []
+        manager = SerialManager(enable_auto_reconnect=False)
+
+        with pytest.raises(PortClosedError):
+            manager.send_data("/dev/ttyUSB0", b"hello")
+
+        manager.shutdown()
+
+    def test_send_data_write_error(self, mock_serial, mock_list_ports):
+        """测试写入失败"""
+        from serial import SerialException
+
+        mock_list_ports.return_value = []
+        manager = SerialManager(enable_auto_reconnect=False)
+
+        with patch.object(manager, "_create_serial") as mock_create:
+            mock_serial_obj = MagicMock()
+            mock_serial_obj.is_open = True
+            mock_serial_obj.in_waiting = 0
+            mock_serial_obj.write.side_effect = SerialException("写入错误")
+            mock_create.return_value = mock_serial_obj
+
+            manager.open_port("/dev/ttyUSB0")
+
+            with pytest.raises(WriteFailedError):
+                manager.send_data("/dev/ttyUSB0", b"hello")
+
+        manager.shutdown()
+
+
+class TestSerialManagerReadData:
+    """测试 read_data 功能"""
+
+    def test_read_data_with_size(self, mock_serial, mock_list_ports):
+        """测试读取指定字节数"""
+        mock_list_ports.return_value = []
+        manager = SerialManager(enable_auto_reconnect=False)
+
+        with patch.object(manager, "_create_serial") as mock_create:
+            mock_serial_obj = MagicMock()
+            mock_serial_obj.is_open = True
+            mock_serial_obj.in_waiting = 0
+            mock_serial_obj.timeout = 1.0
+            mock_serial_obj.read.return_value = b"hello"
+            mock_create.return_value = mock_serial_obj
+
+            manager.open_port("/dev/ttyUSB0")
+            data = manager.read_data("/dev/ttyUSB0", size=5)
+
+            assert data == b"hello"
+            mock_serial_obj.read.assert_called_once_with(5)
+
+        manager.shutdown()
+
+    def test_read_data_available(self, mock_serial, mock_list_ports):
+        """测试读取所有可用数据"""
+        mock_list_ports.return_value = []
+        manager = SerialManager(enable_auto_reconnect=False)
+
+        with patch.object(manager, "_create_serial") as mock_create:
+            mock_serial_obj = MagicMock()
+            mock_serial_obj.is_open = True
+            mock_serial_obj.in_waiting = 10
+            mock_serial_obj.timeout = 1.0
+            mock_serial_obj.read.return_value = b"0123456789"
+            mock_create.return_value = mock_serial_obj
+
+            manager.open_port("/dev/ttyUSB0")
+            data = manager.read_data("/dev/ttyUSB0")
+
+            assert data == b"0123456789"
+            mock_serial_obj.read.assert_called_once_with(10)
+
+        manager.shutdown()
+
+    def test_read_data_with_timeout(self, mock_serial, mock_list_ports):
+        """测试使用自定义超时"""
+        mock_list_ports.return_value = []
+        manager = SerialManager(enable_auto_reconnect=False)
+
+        with patch.object(manager, "_create_serial") as mock_create:
+            mock_serial_obj = MagicMock()
+            mock_serial_obj.is_open = True
+            mock_serial_obj.in_waiting = 5
+            mock_serial_obj.timeout = 1.0
+            mock_serial_obj.read.return_value = b"hello"
+            mock_create.return_value = mock_serial_obj
+
+            manager.open_port("/dev/ttyUSB0")
+            data = manager.read_data("/dev/ttyUSB0", timeout_ms=500)
+
+            # 验证超时被临时修改
+            assert mock_serial_obj.timeout == 1.0  # 应该恢复原值
+
+        manager.shutdown()
+
+    def test_read_data_not_open(self, mock_list_ports):
+        """测试从未打开的串口读取数据"""
+        mock_list_ports.return_value = []
+        manager = SerialManager(enable_auto_reconnect=False)
+
+        with pytest.raises(PortClosedError):
+            manager.read_data("/dev/ttyUSB0")
+
+        manager.shutdown()
+
+    def test_read_data_empty(self, mock_serial, mock_list_ports):
+        """测试无数据可读"""
+        mock_list_ports.return_value = []
+        manager = SerialManager(enable_auto_reconnect=False)
+
+        with patch.object(manager, "_create_serial") as mock_create:
+            mock_serial_obj = MagicMock()
+            mock_serial_obj.is_open = True
+            mock_serial_obj.in_waiting = 0
+            mock_serial_obj.timeout = 1.0
+            mock_serial_obj.read.return_value = b""
+            mock_create.return_value = mock_serial_obj
+
+            manager.open_port("/dev/ttyUSB0")
+            data = manager.read_data("/dev/ttyUSB0")
+
+            assert data == b""
 
         manager.shutdown()
