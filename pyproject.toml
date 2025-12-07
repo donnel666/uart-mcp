@@ -38,3 +38,8 @@ strict = true
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "types-pyserial>=3.5.0.20251001",
+]

@@ -33,6 +33,14 @@ class FlowControl(str, Enum):
     SOFTWARE = "software"  # XON/XOFF
 
 
+class LineEnding(str, Enum):
+    """终端换行符枚举"""
+
+    CR = "\r"  # Carriage Return
+    LF = "\n"  # Line Feed
+    CRLF = "\r\n"  # Carriage Return + Line Feed
+
+
 # 支持的波特率列表
 SUPPORTED_BAUDRATES: tuple[int, ...] = (
     300,
@@ -63,6 +71,11 @@ DEFAULT_FLOW_CONTROL = FlowControl.NONE
 DEFAULT_TIMEOUT_MS = 1000
 DEFAULT_WRITE_TIMEOUT_MS = 1000
 DEFAULT_CONNECT_TIMEOUT_MS = 5000
+
+# 终端会话默认配置
+DEFAULT_LINE_ENDING = LineEnding.CRLF
+DEFAULT_BUFFER_SIZE = 65536  # 64KB
+DEFAULT_LOCAL_ECHO = False
 
 
 @dataclass
@@ -149,4 +162,59 @@ class PortStatus:
             "config": self.config.to_dict() if self.config else None,
             "connected": self.connected,
             "reconnecting": self.reconnecting,
+        }
+
+
+@dataclass
+class TerminalConfig:
+    """终端会话配置
+
+    Attributes:
+        line_ending: 换行符类型
+        local_echo: 是否本地回显
+        buffer_size: 输出缓冲区大小（字节）
+    """
+
+    line_ending: LineEnding = DEFAULT_LINE_ENDING
+    local_echo: bool = DEFAULT_LOCAL_ECHO
+    buffer_size: int = DEFAULT_BUFFER_SIZE
+
+    def to_dict(self) -> dict[str, str | bool | int]:
+        """转换为字典格式"""
+        return {
+            "line_ending": self.line_ending.name,
+            "local_echo": self.local_echo,
+            "buffer_size": self.buffer_size,
+        }
+
+
+@dataclass
+class SessionInfo:
+    """终端会话信息
+
+    Attributes:
+        session_id: 会话ID（即串口路径）
+        port: 串口路径
+        config: 终端配置
+        buffer_size: 当前缓冲区数据量（字节）
+        is_active: 会话是否活跃
+        created_at: 创建时间戳
+    """
+
+    session_id: str
+    port: str
+    config: TerminalConfig
+    buffer_size: int
+    is_active: bool
+    created_at: float
+
+    def to_dict(self) -> dict[str, object]:
+        """转换为字典格式"""
+        return {
+            "session_id": self.session_id,
+            "port": self.port,
+            "config": self.config.to_dict(),
+            "buffer_size": self.buffer_size,
+            "is_active": self.is_active,
+            "created_at": self.created_at,
         }

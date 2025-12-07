@@ -618,7 +618,8 @@ class SerialManager:
 
             managed = self._ports[port]
             try:
-                bytes_written: int = managed.serial.write(data)
+                result = managed.serial.write(data)
+                bytes_written: int = result if result is not None else 0
                 logger.debug("发送数据到串口 %s：%d 字节", port, bytes_written)
                 return bytes_written
             except SerialException as e:

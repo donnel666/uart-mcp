@@ -14,6 +14,7 @@ from mcp.server.models import InitializationOptions
 
 from .errors import SerialError
 from .serial_manager import get_serial_manager
+from .terminal_manager import get_terminal_manager
 from .tools.data_ops import (
     READ_DATA_TOOL,
     SEND_DATA_TOOL,
@@ -30,6 +31,22 @@ from .tools.port_ops import (
     get_status,
     open_port,
     set_config,
+)
+from .tools.terminal import (
+    CLEAR_BUFFER_TOOL,
+    CLOSE_SESSION_TOOL,
+    CREATE_SESSION_TOOL,
+    GET_SESSION_INFO_TOOL,
+    LIST_SESSIONS_TOOL,
+    READ_OUTPUT_TOOL,
+    SEND_COMMAND_TOOL,
+    clear_buffer,
+    close_session,
+    create_session,
+    get_session_info,
+    list_sessions,
+    read_output,
+    send_command,
 )
 
 # 配置日志
@@ -82,6 +99,42 @@ async def handle_list_tools() -> list[types.Tool]:
             description=READ_DATA_TOOL["description"],
             inputSchema=READ_DATA_TOOL["inputSchema"],
         ),
+        # 终端会话工具
+        types.Tool(
+            name=CREATE_SESSION_TOOL["name"],
+            description=CREATE_SESSION_TOOL["description"],
+            inputSchema=CREATE_SESSION_TOOL["inputSchema"],
+        ),
+        types.Tool(
+            name=CLOSE_SESSION_TOOL["name"],
+            description=CLOSE_SESSION_TOOL["description"],
+            inputSchema=CLOSE_SESSION_TOOL["inputSchema"],
+        ),
+        types.Tool(
+            name=SEND_COMMAND_TOOL["name"],
+            description=SEND_COMMAND_TOOL["description"],
+            inputSchema=SEND_COMMAND_TOOL["inputSchema"],
+        ),
+        types.Tool(
+            name=READ_OUTPUT_TOOL["name"],
+            description=READ_OUTPUT_TOOL["description"],
+            inputSchema=READ_OUTPUT_TOOL["inputSchema"],
+        ),
+        types.Tool(
+            name=LIST_SESSIONS_TOOL["name"],
+            description=LIST_SESSIONS_TOOL["description"],
+            inputSchema=LIST_SESSIONS_TOOL["inputSchema"],
+        ),
+        types.Tool(
+            name=GET_SESSION_INFO_TOOL["name"],
+            description=GET_SESSION_INFO_TOOL["description"],
+            inputSchema=GET_SESSION_INFO_TOOL["inputSchema"],
+        ),
+        types.Tool(
+            name=CLEAR_BUFFER_TOOL["name"],
+            description=CLEAR_BUFFER_TOOL["description"],
+            inputSchema=CLEAR_BUFFER_TOOL["inputSchema"],
+        ),
     ]
 
 
@@ -106,6 +159,21 @@ async def handle_call_tool(
             result = send_data(**arguments)
         elif name == "read_data":
             result = read_data(**arguments)
+        # 终端会话工具
+        elif name == "create_session":
+            result = create_session(**arguments)
+        elif name == "close_session":
+            result = close_session(**arguments)
+        elif name == "send_command":
+            result = send_command(**arguments)
+        elif name == "read_output":
+            result = read_output(**arguments)
+        elif name == "list_sessions":
+            result = list_sessions()
+        elif name == "get_session_info":
+            result = get_session_info(**arguments)
+        elif name == "clear_buffer":
+            result = clear_buffer(**arguments)
         else:
             raise ValueError(f"未知工具：{name}")
 
@@ -157,9 +225,12 @@ def main() -> None:
     except KeyboardInterrupt:
         logger.info("收到中断信号，正在关闭...")
     finally:
+        # 关闭终端管理器
+        terminal_mgr = get_terminal_manager()
+        terminal_mgr.shutdown()
         # 关闭串口管理器
-        manager = get_serial_manager()
-        manager.shutdown()
+        serial_mgr = get_serial_manager()
+        serial_mgr.shutdown()
         logger.info("UART MCP Server 已关闭")
 
 
