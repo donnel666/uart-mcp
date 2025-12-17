@@ -12,7 +12,7 @@ import serial
 import serial.tools.list_ports
 from serial import SerialException
 
-from .config import get_blacklist_manager
+from .config import get_blacklist_manager, get_config_manager
 from .errors import (
     InvalidParamError,
     PermissionDeniedError,
@@ -24,13 +24,6 @@ from .errors import (
     WriteFailedError,
 )
 from .types import (
-    DEFAULT_BAUDRATE,
-    DEFAULT_BYTESIZE,
-    DEFAULT_FLOW_CONTROL,
-    DEFAULT_PARITY,
-    DEFAULT_STOPBITS,
-    DEFAULT_TIMEOUT_MS,
-    DEFAULT_WRITE_TIMEOUT_MS,
     SUPPORTED_BAUDRATES,
     SUPPORTED_BYTESIZES,
     FlowControl,
@@ -268,27 +261,27 @@ class SerialManager:
     def open_port(
         self,
         port: str,
-        baudrate: int = DEFAULT_BAUDRATE,
-        bytesize: int = DEFAULT_BYTESIZE,
-        parity: str = DEFAULT_PARITY.value,
-        stopbits: float = DEFAULT_STOPBITS.value,
-        flow_control: str = DEFAULT_FLOW_CONTROL.value,
-        read_timeout_ms: int = DEFAULT_TIMEOUT_MS,
-        write_timeout_ms: int = DEFAULT_WRITE_TIMEOUT_MS,
-        auto_reconnect: bool = True,
+        baudrate: int | None = None,
+        bytesize: int | None = None,
+        parity: str | None = None,
+        stopbits: float | None = None,
+        flow_control: str | None = None,
+        read_timeout_ms: int | None = None,
+        write_timeout_ms: int | None = None,
+        auto_reconnect: bool | None = None,
     ) -> PortStatus:
         """打开串口
 
         Args:
             port: 串口路径
-            baudrate: 波特率
-            bytesize: 数据位
-            parity: 校验位
-            stopbits: 停止位
-            flow_control: 流控制
-            read_timeout_ms: 读取超时（毫秒）
-            write_timeout_ms: 写入超时（毫秒）
-            auto_reconnect: 是否启用自动重连
+            baudrate: 波特率（None 时使用配置默认值）
+            bytesize: 数据位（None 时使用配置默认值）
+            parity: 校验位（None 时使用配置默认值）
+            stopbits: 停止位（None 时使用配置默认值）
+            flow_control: 流控制（None 时使用配置默认值）
+            read_timeout_ms: 读取超时（毫秒，None 时使用配置默认值）
+            write_timeout_ms: 写入超时（毫秒，None 时使用配置默认值）
+            auto_reconnect: 是否启用自动重连（None 时使用配置默认值）
 
         Returns:
             串口状态
@@ -304,15 +297,40 @@ class SerialManager:
         if blacklist.is_blacklisted(port):
             raise PortBlacklistedError(port)
 
+        # 获取全局配置作为默认值
+        global_config = get_config_manager().config
+
+        # 使用用户参数或配置默认值
+        final_baudrate = baudrate if baudrate is not None else global_config.baudrate
+        final_bytesize = bytesize if bytesize is not None else global_config.bytesize
+        final_parity = parity if parity is not None else global_config.parity
+        final_stopbits = stopbits if stopbits is not None else global_config.stopbits
+        # 流控：显式传入时优先使用传入值
+        if flow_control is None:
+            final_flow_control = (
+                "software" if global_config.xonxoff else
+                "hardware" if global_config.rtscts else
+                "none"
+            )
+        else:
+            final_flow_control = flow_control
+        cc = global_config
+        rt = read_timeout_ms
+        wt = write_timeout_ms
+        ar = auto_reconnect
+        final_read_timeout = cc.read_timeout if rt is None else rt
+        final_write_timeout = cc.write_timeout if wt is None else wt
+        final_auto_reconnect = cc.auto_reconnect if ar is None else ar
+
         # 验证参数
         config = self._validate_and_create_config(
-            baudrate,
-            bytesize,
-            parity,
-            stopbits,
-            flow_control,
-            read_timeout_ms,
-            write_timeout_ms,
+            final_baudrate,
+            final_bytesize,
+            final_parity,
+            final_stopbits,
+            final_flow_control,
+            final_read_timeout,
+            final_write_timeout,
         )
 
         with self._lock:
@@ -330,7 +348,7 @@ class SerialManager:
 
             # 打开串口
             serial_obj = self._create_serial(port, config)
-            managed = ManagedPort(port, serial_obj, config, auto_reconnect)
+            managed = ManagedPort(port, serial_obj, config, final_auto_reconnect)
             self._ports[port] = managed
             logger.info("串口打开成功：%s", port)
 
