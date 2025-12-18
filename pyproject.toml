@@ -46,5 +46,6 @@ testpaths = ["tests"]
 
 [dependency-groups]
 dev = [
+    "pytest-cov>=7.0.0",
     "types-pyserial>=3.5.0.20251001",
 ]

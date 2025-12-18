@@ -29,7 +29,7 @@ class TestUartConfig:
     def test_default_values(self):
         """测试默认配置值是否符合规格"""
         config = UartConfig()
-        assert config.baudrate == 9600
+        assert config.baudrate == 115200
         assert config.bytesize == 8
         assert config.parity == "N"
         assert config.stopbits == 1.0
@@ -70,9 +70,9 @@ class TestConfigPaths:
     def test_config_dir_linux(self):
         """测试 Linux 配置目录"""
         with patch("platform.system", return_value="Linux"):
-            with patch.dict(os.environ, {"XDG_CONFIG_HOME": "/home/user/.config"}):
+            with patch("pathlib.Path.home", return_value=Path("/home/user")):
                 config_dir = get_config_dir()
-                assert str(config_dir) == "/home/user/.config/uart-mcp"
+                assert str(config_dir) == "/home/user/.uart-mcp"
 
     def test_config_dir_windows(self):
         """测试 Windows 配置目录"""
@@ -80,7 +80,7 @@ class TestConfigPaths:
             with patch.dict(os.environ, {"APPDATA": "C:\\Users\\user\\AppData\\Roaming"}):
                 config_dir = get_config_dir()
                 # Path 会自动处理路径分隔符，使用 normalize
-                assert str(config_dir).replace("\\", "/") == "C:/Users/user/AppData/Roaming/uart-mcp"
+                assert str(config_dir).replace("\\", "/") == "C:/Users/user/AppData/Roaming/.uart-mcp"
 
     def test_config_path(self):
         """测试配置文件路径"""
@@ -104,7 +104,7 @@ class TestConfigManager:
             with patch("uart_mcp.config.get_config_path", return_value=Path(tmpdir) / "nonexistent.toml"):
                 cm = ConfigManager()
                 config = cm.config
-                assert config.baudrate == 9600  # 使用默认值
+                assert config.baudrate == 115200  # 使用默认值
 
     def test_load_config_from_file(self):
         """测试从文件加载配置"""
@@ -175,7 +175,7 @@ auto_reconnect = false
             with patch("uart_mcp.config.get_config_path", return_value=config_path):
                 # 初始化时应捕获错误并使用默认值
                 cm = ConfigManager()
-                assert cm.config.baudrate == 9600  # 使用默认值
+                assert cm.config.baudrate == 115200  # 使用默认值
 
     def test_reload_config(self):
         """测试配置热加载"""

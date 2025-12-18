@@ -27,7 +27,7 @@ def print_result(test_name: str, success: bool, result: Any = None) -> None:
         print(f"    详情: {result}")
 
 
-def test_list_ports() -> bool:
+def test_list_ports() -> None:
     """测试1: 列出所有可用串口"""
     from uart_mcp.tools.list_ports import list_ports
 
@@ -37,13 +37,13 @@ def test_list_ports() -> bool:
         print_result("list_ports - 列出串口", found, ports)
         if found:
             print(f"    发现目标端口: {TEST_PORT}")
-        return found
+        assert found, f"未找到目标端口 {TEST_PORT}"
     except Exception as e:
         print_result("list_ports - 列出串口", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_open_port() -> bool:
+def test_open_port() -> None:
     """测试2: 打开串口"""
     from uart_mcp.tools.port_ops import open_port
 
@@ -57,13 +57,13 @@ def test_open_port() -> bool:
         )
         success = result.get("is_open", False)
         print_result("open_port - 打开串口", success, result)
-        return success
+        assert success, "无法打开串口"
     except Exception as e:
         print_result("open_port - 打开串口", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_get_status() -> bool:
+def test_get_status() -> None:
     """测试3: 获取串口状态"""
     from uart_mcp.tools.port_ops import get_status
 
@@ -72,13 +72,13 @@ def test_get_status() -> bool:
         config = result.get("config", {})
         success = result.get("is_open", False) and config.get("baudrate") == TEST_BAUDRATE
         print_result("get_status - 获取状态", success, result)
-        return success
+        assert success, "获取状态失败"
     except Exception as e:
         print_result("get_status - 获取状态", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_set_config() -> bool:
+def test_set_config() -> None:
     """测试4: 修改串口配置（热更新）"""
     from uart_mcp.tools.port_ops import set_config
 
@@ -92,13 +92,13 @@ def test_set_config() -> bool:
 
         # 恢复原配置
         set_config(port=TEST_PORT, baudrate=TEST_BAUDRATE)
-        return success
+        assert success, "修改配置失败"
     except Exception as e:
         print_result("set_config - 修改配置", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_send_receive_text() -> bool:
+def test_send_receive_text() -> None:
     """测试5: 发送和接收文本数据（回环测试）"""
     from uart_mcp.tools.data_ops import read_data, send_data
 
@@ -109,7 +109,7 @@ def test_send_receive_text() -> bool:
         send_result = send_data(port=TEST_PORT, data=test_message, is_binary=False)
         if not send_result.get("success"):
             print_result("send_data - 发送文本", False, send_result)
-            return False
+            assert False, "发送文本失败"
 
         # 等待数据回环
         time.sleep(0.1)
@@ -120,13 +120,13 @@ def test_send_receive_text() -> bool:
 
         success = test_message in received
         print_result("send/read_data - 文本回环", success, f"发送: {test_message}, 接收: {received}")
-        return success
+        assert success, "文本回环测试失败"
     except Exception as e:
         print_result("send/read_data - 文本回环", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_send_receive_binary() -> bool:
+def test_send_receive_binary() -> None:
     """测试6: 发送和接收二进制数据（回环测试）"""
     from uart_mcp.tools.data_ops import read_data, send_data
 
@@ -139,7 +139,7 @@ def test_send_receive_binary() -> bool:
         send_result = send_data(port=TEST_PORT, data=b64_data, is_binary=True)
         if not send_result.get("success"):
             print_result("send_data - 发送二进制", False, send_result)
-            return False
+            assert False, "发送二进制失败"
 
         # 等待数据回环
         time.sleep(0.1)
@@ -151,13 +151,13 @@ def test_send_receive_binary() -> bool:
 
         success = raw_data == received_raw
         print_result("send/read_data - 二进制回环", success, f"发送: {raw_data.hex()}, 接收: {received_raw.hex()}")
-        return success
+        assert success, "二进制回环测试失败"
     except Exception as e:
         print_result("send/read_data - 二进制回环", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_create_session() -> bool:
+def test_create_session() -> None:
     """测试7: 创建终端会话"""
     from uart_mcp.tools.terminal import create_session
 
@@ -169,13 +169,13 @@ def test_create_session() -> bool:
         )
         success = result.get("session_id") == TEST_PORT
         print_result("create_session - 创建会话", success, result)
-        return success
+        assert success, "创建会话失败"
     except Exception as e:
         print_result("create_session - 创建会话", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_list_sessions() -> bool:
+def test_list_sessions() -> None:
     """测试8: 列出所有会话"""
     from uart_mcp.tools.terminal import list_sessions
 
@@ -186,13 +186,13 @@ def test_list_sessions() -> bool:
         session_ids = [s.get("session_id") if isinstance(s, dict) else s for s in sessions]
         success = TEST_PORT in session_ids
         print_result("list_sessions - 列出会话", success, result)
-        return success
+        assert success, "列出会话失败"
     except Exception as e:
         print_result("list_sessions - 列出会话", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_get_session_info() -> bool:
+def test_get_session_info() -> None:
     """测试9: 获取会话信息"""
     from uart_mcp.tools.terminal import get_session_info
 
@@ -200,13 +200,13 @@ def test_get_session_info() -> bool:
         result = get_session_info(session_id=TEST_PORT)
         success = result.get("session_id") == TEST_PORT
         print_result("get_session_info - 会话信息", success, result)
-        return success
+        assert success, "获取会话信息失败"
     except Exception as e:
         print_result("get_session_info - 会话信息", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_send_command_read_output() -> bool:
+def test_send_command_read_output() -> None:
     """测试10: 发送命令并读取输出（回环测试）"""
     from uart_mcp.tools.terminal import read_output, send_command
 
@@ -226,7 +226,7 @@ def test_send_command_read_output() -> bool:
         )
         if not send_result.get("success"):
             print_result("send_command - 发送命令", False, send_result)
-            return False
+            assert False, "发送命令失败"
 
         # 等待数据回环（终端会话后台线程读取需要时间）
         # 尝试多次读取，最多等待2秒
@@ -244,13 +244,13 @@ def test_send_command_read_output() -> bool:
         # 回环模式下应该收到发送的命令
         success = test_cmd in output
         print_result("send/read_output - 命令回环", success, f"发送: {test_cmd}, 输出: {repr(output)}")
-        return success
+        assert success, "命令回环测试失败"
     except Exception as e:
         print_result("send/read_output - 命令回环", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_clear_buffer() -> bool:
+def test_clear_buffer() -> None:
     """测试11: 清空缓冲区"""
     from uart_mcp.tools.terminal import clear_buffer, read_output
 
@@ -264,13 +264,13 @@ def test_clear_buffer() -> bool:
         empty = len(read_result.get("data", "")) == 0  # 键名是 "data"
         print_result("clear_buffer - 验证已清空", empty, read_result)
 
-        return success and empty
+        assert success and empty, "清空缓冲区失败"
     except Exception as e:
         print_result("clear_buffer - 清空缓冲区", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_close_session() -> bool:
+def test_close_session() -> None:
     """测试12: 关闭终端会话"""
     from uart_mcp.tools.terminal import close_session
 
@@ -278,13 +278,13 @@ def test_close_session() -> bool:
         result = close_session(session_id=TEST_PORT)
         success = result.get("success", False)
         print_result("close_session - 关闭会话", success, result)
-        return success
+        assert success
     except Exception as e:
         print_result("close_session - 关闭会话", False, str(e))
-        return False
+        assert False, str(e)
 
 
-def test_close_port() -> bool:
+def test_close_port() -> None:
     """测试13: 关闭串口"""
     from uart_mcp.tools.port_ops import close_port
 
@@ -292,60 +292,47 @@ def test_close_port() -> bool:
         result = close_port(port=TEST_PORT)
         success = result.get("success", False)
         print_result("close_port - 关闭串口", success, result)
-        return success
+        assert success
     except Exception as e:
         print_result("close_port - 关闭串口", False, str(e))
-        return False
+        assert False, str(e)
 
 
 def run_all_tests() -> None:
-    """运行所有集成测试"""
+    """运行所有集成测试（独立脚本模式）"""
     print("=" * 60)
     print("UART MCP 集成测试 - 真实串口回环测试")
     print(f"测试端口: {TEST_PORT}")
     print(f"波特率: {TEST_BAUDRATE}")
     print("=" * 60)
 
+    tests = [
+        ("list_ports", test_list_ports),
+        ("open_port", test_open_port),
+        ("get_status", test_get_status),
+        ("set_config", test_set_config),
+        ("send_receive_text", test_send_receive_text),
+        ("send_receive_binary", test_send_receive_binary),
+        ("create_session", test_create_session),
+        ("list_sessions", test_list_sessions),
+        ("get_session_info", test_get_session_info),
+        ("send_command_read_output", test_send_command_read_output),
+        ("clear_buffer", test_clear_buffer),
+        ("close_session", test_close_session),
+        ("close_port", test_close_port),
+    ]
+
     results: dict[str, bool] = {}
 
-    # 第一阶段：串口基础操作
-    print("\n[阶段1] 串口基础操作测试")
-    print("-" * 40)
-    results["list_ports"] = test_list_ports()
-
-    if not results["list_ports"]:
-        print(f"\n错误: 未找到测试端口 {TEST_PORT}，请检查设备连接")
-        print("测试终止")
-        return
-
-    results["open_port"] = test_open_port()
-    if not results["open_port"]:
-        print("\n错误: 无法打开串口，测试终止")
-        return
-
-    results["get_status"] = test_get_status()
-    results["set_config"] = test_set_config()
-
-    # 第二阶段：数据通信测试
-    print("\n[阶段2] 数据通信测试（回环）")
-    print("-" * 40)
-    results["send_receive_text"] = test_send_receive_text()
-    results["send_receive_binary"] = test_send_receive_binary()
-
-    # 第三阶段：终端会话测试
-    print("\n[阶段3] 终端会话测试")
-    print("-" * 40)
-    results["create_session"] = test_create_session()
-    results["list_sessions"] = test_list_sessions()
-    results["get_session_info"] = test_get_session_info()
-    results["send_command_read_output"] = test_send_command_read_output()
-    results["clear_buffer"] = test_clear_buffer()
-    results["close_session"] = test_close_session()
-
-    # 第四阶段：清理
-    print("\n[阶段4] 资源清理")
-    print("-" * 40)
-    results["close_port"] = test_close_port()
+    for name, test_func in tests:
+        try:
+            test_func()
+            results[name] = True
+        except AssertionError:
+            results[name] = False
+        except Exception as e:
+            print(f"  测试 {name} 异常: {e}")
+            results[name] = False
 
     # 测试统计
     print("\n" + "=" * 60)
