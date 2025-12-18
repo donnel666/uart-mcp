@@ -119,7 +119,11 @@ def test_send_receive_text() -> None:
         received = read_result.get("data", "")
 
         success = test_message in received
-        print_result("send/read_data - 文本回环", success, f"发送: {test_message}, 接收: {received}")
+        print_result(
+            "send/read_data - 文本回环",
+            success,
+            f"发送: {test_message}, 接收: {received}"
+        )
         assert success, "文本回环测试失败"
     except Exception as e:
         print_result("send/read_data - 文本回环", False, str(e))
@@ -150,7 +154,11 @@ def test_send_receive_binary() -> None:
         received_raw = base64.b64decode(received_b64) if received_b64 else b""
 
         success = raw_data == received_raw
-        print_result("send/read_data - 二进制回环", success, f"发送: {raw_data.hex()}, 接收: {received_raw.hex()}")
+        print_result(
+            "send/read_data - 二进制回环",
+            success,
+            f"发送: {raw_data.hex()}, 接收: {received_raw.hex()}"
+        )
         assert success, "二进制回环测试失败"
     except Exception as e:
         print_result("send/read_data - 二进制回环", False, str(e))
@@ -183,7 +191,9 @@ def test_list_sessions() -> None:
         result = list_sessions()
         sessions = result.get("sessions", [])
         # sessions 是对象列表，需要检查 session_id 字段
-        session_ids = [s.get("session_id") if isinstance(s, dict) else s for s in sessions]
+        session_ids = [
+            s.get("session_id") if isinstance(s, dict) else s for s in sessions
+        ]
         success = TEST_PORT in session_ids
         print_result("list_sessions - 列出会话", success, result)
         assert success, "列出会话失败"
@@ -243,7 +253,11 @@ def test_send_command_read_output() -> None:
 
         # 回环模式下应该收到发送的命令
         success = test_cmd in output
-        print_result("send/read_output - 命令回环", success, f"发送: {test_cmd}, 输出: {repr(output)}")
+        print_result(
+            "send/read_output - 命令回环",
+            success,
+            f"发送: {test_cmd}, 输出: {repr(output)}"
+        )
         assert success, "命令回环测试失败"
     except Exception as e:
         print_result("send/read_output - 命令回环", False, str(e))

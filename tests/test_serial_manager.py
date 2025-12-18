@@ -335,7 +335,7 @@ class TestSerialManagerReadData:
             mock_create.return_value = mock_serial_obj
 
             manager.open_port("/dev/ttyUSB0")
-            data = manager.read_data("/dev/ttyUSB0", timeout_ms=500)
+            manager.read_data("/dev/ttyUSB0", timeout_ms=500)  # 忽略返回值
 
             # 验证超时被临时修改
             assert mock_serial_obj.timeout == 1.0  # 应该恢复原值

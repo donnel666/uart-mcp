@@ -30,11 +30,12 @@ build-backend = "hatchling.build"
 packages = ["src/uart_mcp"]
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]  # 忽略行长度检查，使用 line-length 控制
 
 [tool.mypy]
 python_version = "3.13"
