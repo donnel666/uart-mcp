@@ -12,6 +12,8 @@ import mcp.types as types
 from mcp.server.lowlevel import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 
+# 配置日志 - 写入文件以避免干扰 stdio MCP 通信
+from .config import get_config_dir
 from .errors import SerialError
 from .serial_manager import get_serial_manager
 from .terminal_manager import get_terminal_manager
@@ -49,12 +51,30 @@ from .tools.terminal import (
     send_command,
 )
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
+
+def _setup_logging() -> logging.Logger:
+    """配置日志输出到文件"""
+    log_dir = get_config_dir()
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "uart-mcp.log"
+
+    # 创建文件处理器
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+
+    # 配置根日志器
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    # 移除默认的 stderr 处理器
+    root_logger.handlers.clear()
+    root_logger.addHandler(file_handler)
+
+    return logging.getLogger(__name__)
+
+logger = _setup_logging()
 
 # 创建 MCP Server
 server = Server("uart-mcp")
