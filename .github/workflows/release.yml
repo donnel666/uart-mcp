@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: 设置 Python
+        run: uv python install 3.13
+
+      - name: 安装依赖
+        run: uv sync --all-extras --dev
+
+      - name: 代码检查 (ruff)
+        run: uv run ruff check src tests
+
+      - name: 类型检查 (mypy)
+        run: uv run mypy src
+
+      - name: 运行测试
+        run: uv run pytest tests -v
+
+      - name: 构建包
+        run: uv build
+
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
