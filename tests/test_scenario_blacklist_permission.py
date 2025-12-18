@@ -117,7 +117,7 @@ def test_scenario_windows_skip_permission():
         # Windows 跳过权限校验
         with patch("uart_mcp.config.get_config_path", return_value=test_path), \
              patch("platform.system", return_value="Windows"):
-            cm = ConfigManager()
+            ConfigManager()  # noqa: F841
             # 不应抛出异常，但配置加载失败（文件格式正确，但权限不应通过）
             # 实际上由于文件路径正常，会尝试加载
             print("✓ Windows 跳过权限校验")

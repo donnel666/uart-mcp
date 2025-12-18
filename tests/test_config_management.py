@@ -4,7 +4,6 @@
 """
 
 import os
-import stat
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -12,14 +11,14 @@ from unittest.mock import patch
 import pytest
 
 from uart_mcp.config import (
-    ConfigManager,
     BlacklistManager,
+    ConfigManager,
     UartConfig,
-    get_config_dir,
-    get_config_path,
-    get_blacklist_path,
-    get_config_manager,
     get_blacklist_manager,
+    get_blacklist_path,
+    get_config_dir,
+    get_config_manager,
+    get_config_path,
 )
 
 

@@ -8,14 +8,10 @@ import os
 import platform
 import re
 import threading
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib  # Python < 3.11 兼容
 
 logger = logging.getLogger(__name__)
 

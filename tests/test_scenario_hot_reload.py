@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from uart_mcp.config import ConfigManager, BlacklistManager, UartConfig
+from uart_mcp.config import BlacklistManager, ConfigManager, UartConfig
 
 
 def test_scenario_config_reload_success():
