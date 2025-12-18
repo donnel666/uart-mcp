@@ -52,7 +52,7 @@ class UartConfig:
     """
 
     # 串口默认参数
-    baudrate: int = 9600
+    baudrate: int = 115200
     bytesize: int = 8
     parity: str = "N"
     stopbits: float = 1.0
@@ -81,9 +81,9 @@ def get_config_dir() -> Path:
     system = platform.system()
     if system == "Windows":
         base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+        return base / ".uart-mcp"
     else:  # Linux/macOS
-        base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    return base / "uart-mcp"
+        return Path.home() / ".uart-mcp"
 
 
 def get_config_path() -> Path:

@@ -4,10 +4,15 @@ version = "0.1.0"
 description = "UART MCP Server - 为AI助手提供串口通信能力"
 readme = "README.md"
 requires-python = ">=3.13"
+license = "MIT"
+keywords = ["mcp", "uart", "serial", "ai", "llm"]
 dependencies = [
     "pyserial>=3.5",
     "mcp>=1.0.0",
 ]
+
+[project.scripts]
+uart-mcp = "uart_mcp:main"
 
 [project.optional-dependencies]
 dev = [
