@@ -44,6 +44,7 @@ strict = true
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+addopts = "--ignore=tests/test_integration_real_port.py"
 
 [dependency-groups]
 dev = [
